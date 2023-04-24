@@ -10,28 +10,30 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/streadway/amqp"
+	ginprometheus "github.com/zsais/go-gin-prometheus"
 )
 
 func main() {
-	conn, err := amqp.Dial("amqp://rabbitmq:1jj395qu@localhost:5672/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
+	// conn, err := amqp.Dial("amqp://rabbitmq:1jj395qu@localhost:5672/")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer conn.Close()
 
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ch.Close()
+	// ch, err := conn.Channel()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer ch.Close()
 
-	var queue = "q.go.service"
+	// var queue = "q.go.service"
 
 	// SendRabbitMQ(ch, queue)
 	// fmt.Println("send message")
-	
 
 	r := gin.Default()
+	p := ginprometheus.NewPrometheus("gin")
+	p.Use(r)
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -39,7 +41,7 @@ func main() {
 		})
 	})
 	r.POST("/", func(ctx *gin.Context) {
-		SendRabbitMQ(ch, "q-go-service")
+		// SendRabbitMQ(ch, "q-go-service")
 
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "Hello World",
@@ -76,7 +78,7 @@ func main() {
 	})
 
 	r.Run(":8080")
-	ConsumeRabbitMQ(ch, queue)
+	// ConsumeRabbitMQ(ch, queue)
 }
 
 func ConsumeRabbitMQ(ch *amqp.Channel, queue string) {

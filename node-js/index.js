@@ -11,23 +11,23 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 async function main() {
-  const ch1 = await ch.RabbitMQ(queue, 'ex.sing', 'fanout')
-  // Listener
-    ch1.consume(queue, (msg) => {
-      if (msg !== null) {
-        console.log('Received:', msg.content.toString())
-        ch1.ack(msg)
-      } else {
-        console.log('Consumer cancelled by server')
-      }
-    })
+  // const ch1 = await ch.RabbitMQ(queue, 'ex.sing', 'fanout')
+  // // Listener
+  //   ch1.consume(queue, (msg) => {
+  //     if (msg !== null) {
+  //       console.log('Received:', msg.content.toString())
+  //       ch1.ack(msg)
+  //     } else {
+  //       console.log('Consumer cancelled by server')
+  //     }
+  //   })
 
   app.get('/', (req, res) => {
     res.json({ message: 'Hello World!' })
   })
 
   app.post('/login', (req, res) => {
-    ch1.sendToQueue(queue, Buffer.from(JSON.stringify(req.body)))
+    // ch1.sendToQueue(queue, Buffer.from(JSON.stringify(req.body)))
     res.json(req.body)
   })
 }

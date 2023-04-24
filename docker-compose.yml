@@ -1,6 +1,7 @@
 version: "3.9"
 networks:
   kong-net:
+    name: kong-net
 services:
   kong-database:
     image: postgres:13
@@ -12,20 +13,6 @@ services:
       - POSTGRES_USER=kong
       - POSTGRES_DB=kong
       - POSTGRES_PASSWORD=kongpass
-  kong-migrations:
-    image: kong/kong-gateway:3.2.2.1
-    command: kong migrations bootstrap
-    container_name: kong
-    restart: on-failure
-    networks:
-      - kong-net
-    environment:
-      - KONG_DATABASE=postgres
-      - KONG_PG_HOST=kong-database
-      - KONG_PG_PASSWORD=kongpass
-      - KONG_PASSWORD=test
-    depends_on:
-      - kong-database
 
   kong-gateway:
     image: kong/kong-gateway:3.2.2.1
@@ -66,3 +53,48 @@ services:
       - kong-gateway
       # http://kong-gateway:8001
       # host.docker.internal or localhost or service name
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node-exporter
+    restart: on-failure
+    # --path.rootfs=/host
+    # --path.procfs=/host/proc
+    # --path.sysfs=/host/sys
+    command:
+      - '--path.rootfs=/host'
+    # volumes:
+    #   - /:/host:ro,rslave
+    networks:
+      - kong-net
+    ports:
+      - "9100:9100"
+    depends_on:
+      - kong-gateway
+
+  prometheus:
+    image: prom/prometheus:latest
+    networks:
+      - kong-net
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - "9090:9090"
+    depends_on:
+      - kong-gateway
+      - node-exporter
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    networks:
+      - kong-net
+    ports:
+      - "3000:3000"
+    depends_on:
+      - kong-gateway
+      - prometheus 
+      # 1860
+    volumes:
+      - ./grafana-storage:/var/lib/grafana
