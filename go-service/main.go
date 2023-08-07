@@ -49,19 +49,11 @@ func main() {
 	})
 
 	r.GET("/api", func(c *gin.Context) {
-		resp, err := http.Get("http://localhost:8000/js")
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
-		defer resp.Body.Close()
-
-		body, err := io.ReadAll(resp.Body)
+		body, err := httpGet("http://localhost:8000/js")
 		if err != nil {
 			log.Fatalln(err)
 		}
+
 		type Data struct {
 			Message string `json:"message"`
 		}
@@ -71,14 +63,37 @@ func main() {
 		json.Unmarshal(body, &data)
 
 		c.JSON(http.StatusOK, gin.H{
-			"status":  resp.Status,
-			"message": "Hello World",
+			"status":  http.StatusOK,
+			"message": "Success",
 			"data":    data,
 		})
 	})
 
 	r.Run(":8080")
 	// ConsumeRabbitMQ(ch, queue)
+}
+
+func httpGet(url string) ([]byte, error) {
+	httpReq, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := httpClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 func ConsumeRabbitMQ(ch *amqp.Channel, queue string) {
